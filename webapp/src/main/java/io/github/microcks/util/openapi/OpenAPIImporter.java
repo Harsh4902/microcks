@@ -51,6 +51,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -218,7 +219,13 @@ public class OpenAPIImporter extends AbstractJsonRepositoryImporter implements M
          }
       }
 
-      // If we have callbacks, use a RequestResponsePairWithCB type of exchange.
+      // Iterate on specification "webhooks" nodes.
+      Set<Entry<String, JsonNode>> webhooks = rootSpecification.path("webhooks").properties();
+      for (Entry<String, JsonNode> webhook : webhooks) {
+         result.putAll(extractWebhookRequestResponses(webhook.getKey(), followRefIfAny(webhook.getValue()), operation));
+      }
+
+      // If we have callbacks, use a RequestResponsePair with callbacks.
       if (callbacks != null && !callbacks.isEmpty()) {
          final List<RequestResponsePair> finalCallbacks = callbacks;
          return result.entrySet().stream()
@@ -269,6 +276,36 @@ public class OpenAPIImporter extends AbstractJsonRepositoryImporter implements M
 
                // Deal with parameter constraints if required parameters.
                completeOperationWithParameterConstraints(operation, verb.getValue());
+
+               results.add(operation);
+            }
+         }
+      }
+
+      Set<Entry<String, JsonNode>> webhooks = rootSpecification.path("webhooks").properties();
+      for (Entry<String, JsonNode> webhook : webhooks) {
+         String webhookName = webhook.getKey();
+         JsonNode webhookValue = followRefIfAny(webhook.getValue());
+
+         // Iterate on specification webhook, "verbs" nodes.
+         Set<Entry<String, JsonNode>> verbs = webhookValue.properties();
+         for (Entry<String, JsonNode> verb : verbs) {
+            String verbName = verb.getKey();
+
+            // Only deal with real verbs for now.
+            if (VALID_VERBS.contains(verbName)) {
+               String operationName = webhookName.trim() + " WEBHOOK";
+
+               Operation operation = new Operation();
+               operation.setName(operationName);
+               operation.setMethod(verbName.toUpperCase());
+               operation.setAction("webhook");
+
+               // Complete operation properties if any.
+               if (verb.getValue().has(MetadataExtensions.MICROCKS_OPERATION_EXTENSION)) {
+                  MetadataExtractor.completeOperationProperties(operation,
+                        verb.getValue().path(MetadataExtensions.MICROCKS_OPERATION_EXTENSION));
+               }
 
                results.add(operation);
             }
@@ -464,6 +501,44 @@ public class OpenAPIImporter extends AbstractJsonRepositoryImporter implements M
             }
          }
       }
+      return results;
+   }
+
+   /**
+    * Extract webhook request/response pairs with a webhook specification node.
+    */
+   private Map<Request, Response> extractWebhookRequestResponses(String webhookName, JsonNode webhookNode,
+         Operation operation) {
+      Map<Request, Response> results = new HashMap<>();
+
+      // Iterate on specification path, "verbs" nodes.
+      Set<Entry<String, JsonNode>> verbs = webhookNode.properties();
+      for (Entry<String, JsonNode> verb : verbs) {
+
+         // Find the correct operation.
+         if (operation.getName().equals(webhookName.trim() + " WEBHOOK")) {
+            Map<String, Request> requestBodiesByExample = extractRequestBodies(verb.getValue());
+
+            // No need to go further if no examples.
+            if (verb.getValue().has(RESPONSES_NODE)) {
+               Set<Entry<String, JsonNode>> responseCodes = verb.getValue().path(RESPONSES_NODE).properties();
+               for (Entry<String, JsonNode> responseCode : responseCodes) {
+                  Set<Entry<String, JsonNode>> contents = getResponseContent(responseCode.getValue()).properties();
+
+                  if (contents.isEmpty() && responseCode.getValue().has(X_MICROCKS_REFS)) {
+                     results.putAll(getNoContentRequestResponsePair(operation, null, null, requestBodiesByExample,
+                           Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), responseCode));
+                  }
+                  for (Entry<String, JsonNode> content : contents) {
+                     results.putAll(getContentRequestResponsePairs(operation, null, null, requestBodiesByExample,
+                           Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), responseCode,
+                           content));
+                  }
+               }
+            }
+         }
+      }
+
       return results;
    }
 

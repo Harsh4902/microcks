@@ -15,27 +15,23 @@
  */
 package io.github.microcks.repository;
 
-import io.github.microcks.domain.TestResult;
+import io.github.microcks.domain.WebhookRegistration;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 
-import java.util.Date;
 import java.util.List;
 
 /**
- * Repository interface for TestResult domain objects.
+ * Repository interface for WebhookRegistration domain objects.
  * @author laurent
  */
-public interface TestResultRepository extends MongoRepository<TestResult, String> {
+public interface WebhookRegistrationRepository extends MongoRepository<WebhookRegistration, String> {
 
-   List<TestResult> findByServiceId(String serviceId);
+   List<WebhookRegistration> findByOperationId(String operationId, Pageable pageable);
 
-   List<TestResult> findByServiceId(String serviceId, Pageable page);
+   List<WebhookRegistration> findByFrequency(Long frequency);
 
-   @Query("{ 'testDate' : { $gt: ?0 } }")
-   List<TestResult> findAllWithTestDateAfter(Date date);
-
-   @Query(value = "{ 'serviceId' : ?0}", count = true)
-   long countByServiceId(String serviceId);
+   @Query(value = "{ 'operationId' : ?0 }", count = true)
+   long countByOperationId(String operationId);
 }

@@ -69,6 +69,7 @@ import { ConfigService } from '../../../services/config.service';
 import { ContractsService } from '../../../services/contracts.service';
 import { MetricsService } from '../../../services/metrics.service';
 import { ServicesService } from '../../../services/services.service';
+import { ManageWebhooksDialogComponent } from './_components/manage-webhooks.dialog';
 
 @Component({
   selector: 'app-service-detail-page',
@@ -435,6 +436,19 @@ export class ServiceDetailPageComponent implements OnInit {
           },
         });
     });
+  }
+
+  public openManageWebhooks(operation: Operation): void {
+    const initialState = {
+      closeBtnName: 'Close',
+      operation: operation,
+      operationId: this.serviceId + '-' + operation.name,
+    };
+    console.log('Opening Manage Webhooks dialog for operationId: ' + this.serviceId + '-' + operation.name);
+    this.modalRef = this.modalService.show(ManageWebhooksDialogComponent, {
+      initialState,
+    });
+    this.modalRef.setClass('modal-lg');
   }
 
   public openManageSamples(): void {
@@ -1046,5 +1060,9 @@ export class ServiceDetailPageComponent implements OnInit {
 
   public isAsyncMockEnabled(operation: Operation): boolean {
     return this.hasAsyncAPIFeatureEnabled() && operation.defaultDelay != 0;
+  }
+
+  public isWebhookOperation(operation: Operation): boolean {
+    return operation.action === 'webhook';
   }
 }
