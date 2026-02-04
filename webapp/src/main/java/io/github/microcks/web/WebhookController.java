@@ -15,9 +15,13 @@
  */
 package io.github.microcks.web;
 
+import io.github.microcks.domain.Operation;
+import io.github.microcks.domain.Service;
 import io.github.microcks.domain.WebhookRegistration;
 import io.github.microcks.repository.WebhookRegistrationRepository;
+import io.github.microcks.service.ServiceService;
 import io.github.microcks.util.SafeLogger;
+import io.github.microcks.web.dto.WebhookRegistrationRequestDTO;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -48,10 +52,13 @@ public class WebhookController {
    /** A safe logger for filtering user-controlled data in diagnostic messages. */
    private static final SafeLogger log = SafeLogger.getLogger(WebhookController.class);
 
+   private final ServiceService serviceService;
    private final WebhookRegistrationRepository webhookRegistrationRepository;
 
 
-   public WebhookController(WebhookRegistrationRepository webhookRegistrationRepository) {
+   public WebhookController(ServiceService serviceService,
+         WebhookRegistrationRepository webhookRegistrationRepository) {
+      this.serviceService = serviceService;
       this.webhookRegistrationRepository = webhookRegistrationRepository;
    }
 
@@ -74,14 +81,34 @@ public class WebhookController {
    }
 
    @PostMapping("/webhooks")
-   public ResponseEntity<WebhookRegistration> registerToWebhook(@RequestBody WebhookRegistration registrationRequest) {
+   public ResponseEntity<Object> registerToWebhook(@RequestBody WebhookRegistrationRequestDTO registrationRequest) {
       log.debug("Registering webhook at '{}' for operation '{}'", registrationRequest.getTargetUrl(),
             registrationRequest.getOperationId());
+
+      // Check Service and Operation exist.
+      String[] parts = registrationRequest.getOperationId().split("-");
+      if (parts.length != 2) {
+         log.error("Invalid operationId '{}'", registrationRequest.getOperationId());
+         return new ResponseEntity<>("OperationId is invalid", HttpStatus.NOT_FOUND);
+      }
+      String serviceId = parts[0];
+      Service service = serviceService.getServiceById(serviceId);
+      if (service == null) {
+         log.error("Service with id '{}' not found", serviceId);
+         return new ResponseEntity<>("Service not found", HttpStatus.NOT_FOUND);
+      }
+      Operation operation = service.getOperations().stream().filter(op -> op.getName().equals(parts[1])).findFirst()
+            .orElse(null);
+      if (operation == null) {
+         log.error("Operation with name '{}' not found", parts[1]);
+         return new ResponseEntity<>("Operation not found", HttpStatus.NOT_FOUND);
+      }
 
       // Create a new registration with properties.
       WebhookRegistration webhookRegistration = new WebhookRegistration();
       webhookRegistration.setTargetUrl(registrationRequest.getTargetUrl());
       webhookRegistration.setOperationId(registrationRequest.getOperationId());
+      webhookRegistration.setOperationMethod(operation.getMethod());
       if (registrationRequest.getFrequency() != null) {
          webhookRegistration.setFrequency(registrationRequest.getFrequency());
       } else {
@@ -104,7 +131,7 @@ public class WebhookController {
 
    @DeleteMapping("/webhooks/{id}")
    public ResponseEntity<String> unregisterFromWebhook(@PathVariable("id") String webhookRegistrationId) {
-      log.debug("Removing webhook regristration with id {}", webhookRegistrationId);
+      log.debug("Removing webhook registration with id {}", webhookRegistrationId);
       Optional<WebhookRegistration> result = webhookRegistrationRepository.findById(webhookRegistrationId);
       if (result.isPresent()) {
          webhookRegistrationRepository.deleteById(webhookRegistrationId);

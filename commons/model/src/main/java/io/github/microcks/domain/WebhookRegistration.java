@@ -30,6 +30,7 @@ public class WebhookRegistration {
    private Date createdOn = new Date();
    private Date expiresAt;
    private String operationId;
+   private String operationMethod;
    private String targetUrl;
    private Long frequency;
    private Integer errorCount = 0;
@@ -65,6 +66,14 @@ public class WebhookRegistration {
 
    public void setOperationId(String operationId) {
       this.operationId = operationId;
+   }
+
+   public String getOperationMethod() {
+      return operationMethod;
+   }
+
+   public void setOperationMethod(String operationMethod) {
+      this.operationMethod = operationMethod;
    }
 
    public String getTargetUrl() {

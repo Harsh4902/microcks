@@ -62,12 +62,35 @@
                   placeholder="https://example.com/webhook-endpoint" required>
               </div>
             </div>
-            <div class="control-group form-inline">
-              <label class="control-label" for="defaultDelay">Frequency</label>
-              <div class="controls">
-                <select class="form-control" name="frequency" [(ngModel)]="newRegistration.frequency">
-                  <option *ngFor="let frequency of frequencies" [value]="frequency">{{ frequency / 1000 }} </option>
-                </select> &nbsp; sec
+            <div class="row">
+              <div class="col-md-4">
+                <div class="control-group form-inline">
+                  <label class="control-label" for="frequency">Frequency</label>
+                  <div class="controls">
+                    <select class="form-control" name="frequency" [(ngModel)]="newRegistration.frequency">
+                      <option *ngFor="let frequency of frequencies" [value]="frequency">{{ frequency / 1000 }} </option>
+                    </select> &nbsp; sec
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="control-group form-inline">
+                  <label class="control-label" for="expiresIn">Expires In</label>
+                  <div class="controls">
+                    <select class="form-control" name="expiresIn" [(ngModel)]="expiresIn">
+                      <option *ngFor="let duration of durations" [value]="duration">{{ duration }} </option>
+                    </select> &nbsp; day(s)
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="control-group">
+                  <label class="control-label" for="errorCountThreshold">Errors Threshold</label>
+                  <div class="controls">
+                    <input type="number" class="form-control" id="errorCountThreshold" name="errorCountThreshold" [(ngModel)]="newRegistration.errorCountThreshold"
+                      value="5" required>
+                  </div>
+                </div>
               </div>
             </div>
           </fieldset>

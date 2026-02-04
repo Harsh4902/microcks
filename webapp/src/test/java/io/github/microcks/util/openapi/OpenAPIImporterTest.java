@@ -2299,7 +2299,7 @@ class OpenAPIImporterTest {
       // Check that operations have been found.
       assertEquals(1, service.getOperations().size());
       Operation operation = service.getOperations().getFirst();
-      assertEquals("newPet webhook", operation.getName());
+      assertEquals("newPet WEBHOOK", operation.getName());
       assertEquals("POST", operation.getMethod());
 
       // Parse messages.

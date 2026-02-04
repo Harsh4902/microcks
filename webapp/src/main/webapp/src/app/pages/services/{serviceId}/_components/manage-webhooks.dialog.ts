@@ -49,6 +49,7 @@ export class ManageWebhooksDialogComponent implements OnInit {
   paginationConfig: PaginationConfig = new PaginationConfig;
 
   frequencies: number[] = [3000, 10_000, 30_000]; // in milliseconds
+  durations: number[] = [1, 2, 3, 10]; // in days
 
   displayCreationForm: boolean = false;
   webhookRegistrations: WebhookRegistration[] = [];
@@ -59,6 +60,7 @@ export class ManageWebhooksDialogComponent implements OnInit {
     expiresAt: Date.now() + 2 * 24 * 3600 * 1000, // Two days from now
     errorCountThreshold: 5
   };
+  expiresIn: number = 2;
 
   selectedRegistrations: Record<string, boolean> = {};
 
@@ -98,10 +100,9 @@ export class ManageWebhooksDialogComponent implements OnInit {
 
   public openCreationForm(): void {
     this.displayCreationForm = true;
-    console.log('Opening creation form: ', this.newRegistration);
   }
   public addWebhookRegistration(): void {
-    console.log('Creating webhook registration: ', this.newRegistration);
+    this.newRegistration.expiresAt = Date.now() + this.expiresIn * 24 * 3600 * 1000;
     this.webhooksService.create(this.newRegistration!).subscribe( createdRegistration => {
         this.getWebhookRegistrions();
       });
@@ -110,7 +111,7 @@ export class ManageWebhooksDialogComponent implements OnInit {
       operationId: this.operationId,
       targetUrl: '',
       frequency: 3000,
-      expiresAt: Date.now() + 2 * 24 * 3600 * 1000, // Two days from now
+      expiresAt: Date.now() + this.expiresIn * 24 * 3600 * 1000, // Two days from now
       errorCountThreshold: 5
     };
   }
@@ -120,7 +121,7 @@ export class ManageWebhooksDialogComponent implements OnInit {
       operationId: this.operationId,
       targetUrl: '',
       frequency: 3000,
-      expiresAt: Date.now() + 2 * 24 * 3600 * 1000, // Two days from now
+      expiresAt: Date.now() + this.expiresIn * 24 * 3600 * 1000, // Two days from now
       errorCountThreshold: 5
     };
   }

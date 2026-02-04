@@ -19,7 +19,7 @@
                   "value": {
                     "id": 1,
                     "name": "Zaza",
-                    "tag": "cat"
+                    "tag": "{{ randomValue(cat, dog) }}"
                   }
                 }
               }

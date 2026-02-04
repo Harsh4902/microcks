@@ -190,12 +190,12 @@ public class CallbackTrigger implements ApplicationListener<CallbackTriggerEvent
 
       // Initialize request builder.
       HttpRequest.Builder requestBuilder = HttpRequest.newBuilder().uri(URI.create(callbackUrl))
-            .timeout(Duration.ofSeconds(10)).method(normalizedMethod, publisher);
+            .timeout(Duration.ofSeconds(2)).method(normalizedMethod, publisher);
 
       setRequestHeaders(requestBuilder, callbackRequest, body, methodAllowsBody);
 
       // Build the http client and send the request in a fire and forget mode.
-      HttpClient httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5))
+      HttpClient httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2))
             .version(HttpClient.Version.HTTP_1_1).build();
 
       httpClient.sendAsync(requestBuilder.build(), HttpResponse.BodyHandlers.ofString());
